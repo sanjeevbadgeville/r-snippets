@@ -24,3 +24,11 @@ a
 # 
 # $dd
 # [1] 4
+
+# Add elements to a list
+dfsMod <- list()
+for (a in dfs) {
+  a [,colsToConvertFactorsToNumeric] <- lapply( a[,colsToConvertFactorsToNumeric], function(y) as.numeric(as.character(y)))
+  dfsMod[[length(dfsMod)+1]] <- a
+}
+str(dfsMod)
