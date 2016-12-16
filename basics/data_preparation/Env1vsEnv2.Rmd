@@ -1,0 +1,259 @@
+---
+title: "Analysis of ENV1 vs ENV2 CDH Configurations"
+author: "Sanjeev Chakravarty"
+date: "December 15, 2016"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+require(jsonlite)
+require(tidyjson)
+suppressMessages(require(dplyr))
+suppressMessages(require(tibble))
+suppressMessages(require(tidyr))
+options(stringsAsFactors=F)
+```
+
+## ENV1 vs ENV2 Cloudera Env
+
+Data needs to be **provided** for both the environments. 
+For additional details on how to obtain the configuration files, refer <https://www.cloudera.com/documentation/enterprise/5-3-x/topics/cm_intro_api.html>. 
+Analysis was done using <http://rmarkdown.rstudio.com>. 
+
+```{r load_data, echo=FALSE}
+dfENV1 <- jsonlite::fromJSON("",  flatten = TRUE)
+dfENV2 <- jsonlite::fromJSON("",  flatten = TRUE)
+dfENV1_tbl <- as_data_frame(dfENV1) # Coerce list to data frames
+dfENV2_tbl <- as_data_frame(dfENV2) # Coerce list to data frames
+```
+
+## Columns(Top Level elements in the JSON doc) 
+```{r column_names, echo=FALSE}
+t1 <- as.data.frame(colnames(dfENV1))
+colnames(t1) <- c("ENV1 Columns")
+t2 <- as.data.frame(colnames(dfENV2))
+colnames(t2) <- c("ENV2 Columns")
+knitr::kable(list(t1, t2))
+```
+
+### Timestamp 
+```{r timestamp, echo=FALSE}
+ENV1Timestamp <- as.data.frame(dfENV1$timestamp)
+ENV2Timestamp <- as.data.frame(dfENV2$timestamp)
+knitr::kable(ENV1Timestamp, caption = "ENV1 Clusters")
+knitr::kable(ENV2Timestamp, caption = "ENV2 Clusters")
+```
+
+### Clusters 
+```{r clusters, echo=FALSE}
+ENV1Clusters <- as.data.frame(dfENV1$clusters)
+ENV2Clusters <- as.data.frame(dfENV2$clusters)
+knitr::kable(subset(ENV1Clusters, select = -services), caption = "ENV1 Clusters")
+knitr::kable(subset(ENV2Clusters, select = -services), caption = "ENV2 Clusters")
+```
+
+#### Custer Services 
+```{r clusterServices, echo=FALSE}
+dfENV1_tbl_clusters_services <- dfENV1_tbl %>% unnest(clusters) %>% select(services) %>% unnest(services) 
+dfENV2_tbl_clusters_services <- dfENV2_tbl %>% unnest(clusters) %>% select(services) %>% unnest(services)
+knitr::kable(dfENV1_tbl_clusters_services[,c("name","type","displayName")], caption = "ENV1 Cluster Services")
+knitr::kable(dfENV2_tbl_clusters_services[,c("name","type","displayName")], caption = "ENV2 Cluster Services")
+```
+
+#### Custer Services - Oozie 
+```{r clusterServicesOozie, echo=FALSE}
+dfENV1Oozie <- dfENV1_tbl_clusters_services %>% filter(stringr::str_detect(name,"oozie"))
+dfENV1OozieRoles <- subset(dfENV1Oozie, select = roles) %>% unnest(roles) %>% unnest(config.items)
+dfENV1OozieRoleConfigGroups <- subset(dfENV1Oozie, select = roleConfigGroups) %>% unnest(roleConfigGroups) %>% unnest(config.items)
+dfENV1OozieConfigItems<- subset(dfENV1Oozie, select = config.items) %>% unnest(config.items)
+dfENV2Oozie <- dfENV2_tbl_clusters_services %>% filter(stringr::str_detect(name,"oozie"))
+dfENV2OozieRoles <- subset(dfENV2Oozie, select = roles) %>% unnest(roles) %>% unnest(config.items)
+dfENV2OozieRoleConfigGroups <- subset(dfENV2Oozie, select = roleConfigGroups) %>% unnest(roleConfigGroups) %>% unnest(config.items)
+dfENV2OozieConfigItems<- subset(dfENV2Oozie, select = config.items) %>% unnest(config.items)
+knitr::kable(dfENV1OozieRoles, caption = "ENV1 Oozie Roles")
+knitr::kable(dfENV2OozieRoles, caption = "ENV2 Oozie Roles")
+knitr::kable(dfENV1OozieRoleConfigGroups, caption = "ENV1 Oozie Role Config Groups")
+knitr::kable(dfENV2OozieRoleConfigGroups, caption = "ENV2 Oozie Role Config Groups")
+knitr::kable(dfENV1OozieConfigItems, caption = "ENV1 Oozie Config Items")
+knitr::kable(dfENV2OozieConfigItems, caption = "ENV2 Oozie Config Items")
+```
+
+#### Custer Services - Impala 
+```{r clusterServicesImpala, echo=FALSE}
+dfENV1Impala <- dfENV1_tbl_clusters_services %>% filter(stringr::str_detect(name,"impala"))
+dfENV1ImpalaRoles <- subset(dfENV1Impala, select = roles) %>% unnest(roles) %>% unnest(config.items)
+dfENV1ImpalaRoleConfigGroups <- subset(dfENV1Impala, select = roleConfigGroups) %>% unnest(roleConfigGroups) %>% unnest(config.items)
+dfENV1ImpalaConfigItems<- subset(dfENV1Impala, select = config.items) %>% unnest(config.items)
+dfENV2Impala <- dfENV2_tbl_clusters_services %>% filter(stringr::str_detect(name,"impala"))
+dfENV2ImpalaRoles <- subset(dfENV2Impala, select = roles) %>% unnest(roles) %>% unnest(config.items)
+dfENV2ImpalaRoleConfigGroups <- subset(dfENV2Impala, select = roleConfigGroups) %>% unnest(roleConfigGroups) %>% unnest(config.items)
+dfENV2ImpalaConfigItems<- subset(dfENV2Impala, select = config.items) %>% unnest(config.items)
+knitr::kable(dfENV1ImpalaRoles, caption = "ENV1 Impala Roles")
+knitr::kable(dfENV2ImpalaRoles, caption = "ENV2 Impala Roles")
+knitr::kable(dfENV1ImpalaRoleConfigGroups, caption = "ENV1 Impala Role Config Groups")
+knitr::kable(dfENV2ImpalaRoleConfigGroups, caption = "ENV2 Impala Role Config Groups")
+knitr::kable(dfENV1ImpalaConfigItems, caption = "ENV1 Impala Config Items")
+knitr::kable(dfENV2ImpalaConfigItems, caption = "ENV2 Impala Config Items")
+```
+
+#### Custer Services - Hue 
+```{r clusterServicesHue, echo=FALSE}
+dfENV1Hue <- dfENV1_tbl_clusters_services %>% filter(stringr::str_detect(name,"hue"))
+dfENV1HueRoles <- subset(dfENV1Hue, select = roles) %>% unnest(roles) %>% unnest(config.items)
+dfENV1HueRoleConfigGroups <- subset(dfENV1Hue, select = roleConfigGroups) %>% unnest(roleConfigGroups) 
+dfENV1HueConfigItems<- subset(dfENV1Hue, select = config.items) %>% unnest(config.items)
+dfENV2Hue <- dfENV2_tbl_clusters_services %>% filter(stringr::str_detect(name,"hue"))
+dfENV2HueRoles <- subset(dfENV2Hue, select = roles) %>% unnest(roles) %>% unnest(config.items)
+dfENV2HueRoleConfigGroups <- subset(dfENV2Hue, select = roleConfigGroups) %>% unnest(roleConfigGroups) 
+dfENV2HueConfigItems<- subset(dfENV2Hue, select = config.items) %>% unnest(config.items)
+knitr::kable(dfENV1HueRoles, caption = "ENV1 Hue Roles")
+knitr::kable(dfENV2HueRoles, caption = "ENV2 Hue Roles")
+knitr::kable(dfENV1HueRoleConfigGroups, caption = "ENV1 Hue Role Config Groups")
+knitr::kable(dfENV2HueRoleConfigGroups, caption = "ENV2 Hue Role Config Groups")
+knitr::kable(dfENV1HueConfigItems, caption = "ENV1 Hue Config Items")
+knitr::kable(dfENV2HueConfigItems, caption = "ENV2 Hue Config Items")
+```
+
+#### Custer Services - Yarn
+```{r clusterServiceYarn, echo=FALSE}
+dfENV1Yarn <- dfENV1_tbl_clusters_services %>% filter(stringr::str_detect(name,"yarn"))
+dfENV1YarnRoles <- subset(dfENV1Yarn, select = roles) %>% unnest(roles) %>% unnest(config.items)
+dfENV1YarnRoleConfigGroups <- subset(dfENV1Yarn, select = roleConfigGroups) %>% unnest(roleConfigGroups) %>% unnest(config.items)
+dfENV1YarnConfigItems<- subset(dfENV1Yarn, select = config.items) %>% unnest(config.items)
+dfENV2Yarn <- dfENV2_tbl_clusters_services %>% filter(stringr::str_detect(name,"yarn"))
+dfENV2YarnRoles <- subset(dfENV2Yarn, select = roles) %>% unnest(roles) %>% unnest(config.items)
+dfENV2YarnRoleConfigGroups <- subset(dfENV2Yarn, select = roleConfigGroups) %>% unnest(roleConfigGroups) %>% unnest(config.items)
+dfENV2YarnConfigItems<- subset(dfENV2Yarn, select = config.items) %>% unnest(config.items)
+knitr::kable(dfENV1YarnRoles, caption = "ENV1 Yarn Roles")
+knitr::kable(dfENV2YarnRoles, caption = "ENV2 Yarn Roles")
+knitr::kable(dfENV1YarnRoleConfigGroups, caption = "ENV1 Yarn Role Config Groups")
+knitr::kable(dfENV2YarnRoleConfigGroups, caption = "ENV2 Yarn Role Config Groups")
+knitr::kable(dfENV1YarnConfigItems, caption = "ENV1 Yarn Config Items")
+knitr::kable(dfENV2YarnConfigItems, caption = "ENV2 Yarn Config Items")
+```
+
+#### Custer Services - Hive
+```{r clusterServicehive, echo=FALSE}
+dfENV1Hive <- dfENV1_tbl_clusters_services %>% filter(stringr::str_detect(name,"hive"))
+dfENV1HiveRoles <- subset(dfENV1Hive, select = roles) %>% unnest(roles) %>% unnest(config.items)
+dfENV1HiveRoleConfigGroups <- subset(dfENV1Hive, select = roleConfigGroups) %>% unnest(roleConfigGroups) %>% unnest(config.items)
+dfENV1HiveConfigItems<- subset(dfENV1Hive, select = config.items) %>% unnest(config.items)
+dfENV2Hive <- dfENV2_tbl_clusters_services %>% filter(stringr::str_detect(name,"hive"))
+dfENV2HiveRoles <- subset(dfENV2Hive, select = roles) %>% unnest(roles) %>% unnest(config.items)
+dfENV2HiveRoleConfigGroups <- subset(dfENV2Hive, select = roleConfigGroups) %>% unnest(roleConfigGroups) %>% unnest(config.items)
+dfENV2HiveConfigItems<- subset(dfENV2Hive, select = config.items) %>% unnest(config.items)
+knitr::kable(dfENV1HiveRoles, caption = "ENV1 Hive Roles")
+knitr::kable(dfENV2HiveRoles, caption = "ENV2 Hive Roles")
+knitr::kable(dfENV1HiveRoleConfigGroups, caption = "ENV1 Hive Role Config Groups")
+knitr::kable(dfENV2HiveRoleConfigGroups, caption = "ENV2 Hive Role Config Groups")
+knitr::kable(dfENV1HiveConfigItems, caption = "ENV1 Hive Config Items")
+knitr::kable(dfENV2HiveConfigItems, caption = "ENV2 Hive Config Items")
+```
+
+#### Custer Services - HDFS
+```{r clusterServiceHdfs, echo=FALSE}
+dfENV1HDFS <- dfENV1_tbl_clusters_services %>% filter(stringr::str_detect(name,"hdfs"))
+dfENV1HDFSRoles <- subset(dfENV1HDFS, select = roles) %>% unnest(roles) %>% unnest(config.items)
+dfENV1HDFSRoleConfigGroups <- subset(dfENV1HDFS, select = roleConfigGroups) %>% unnest(roleConfigGroups) %>% unnest(config.items)
+dfENV1HDFSConfigItems<- subset(dfENV1HDFS, select = config.items) %>% unnest(config.items)
+dfENV2HDFS <- dfENV2_tbl_clusters_services %>% filter(stringr::str_detect(name,"hdfs"))
+dfENV2HDFSRoles <- subset(dfENV2HDFS, select = roles) %>% unnest(roles) %>% unnest(config.items)
+dfENV2HDFSRoleConfigGroups <- subset(dfENV2HDFS, select = roleConfigGroups) %>% unnest(roleConfigGroups) %>% unnest(config.items)
+dfENV2HDFSConfigItems<- subset(dfENV2HDFS, select = config.items) %>% unnest(config.items)
+knitr::kable(dfENV1HDFSRoles, caption = "ENV1 HDFS Roles")
+knitr::kable(dfENV2HDFSRoles, caption = "ENV2 HDFS Roles")
+knitr::kable(dfENV1HDFSRoleConfigGroups, caption = "ENV1 HDFS Role Config Groups")
+knitr::kable(dfENV2HDFSRoleConfigGroups, caption = "ENV2 HDFS Role Config Groups")
+knitr::kable(dfENV1HDFSConfigItems, caption = "ENV1 HDFS Config Items")
+knitr::kable(dfENV2HDFSConfigItems, caption = "ENV2 HDFS Config Items")
+```
+
+#### Custer Services - Zookeeper 
+```{r clusterServiceZookeeper, echo=FALSE}
+dfENV1Zookeeper <- dfENV1_tbl_clusters_services %>% filter(stringr::str_detect(name,"zookeeper"))
+dfENV1ZookeeperRoles <- subset(dfENV1Zookeeper, select = roles) %>% unnest(roles) %>% unnest(config.items)
+dfENV1ZookeeperRoleConfigGroups <- subset(dfENV1Zookeeper, select = roleConfigGroups) %>% unnest(roleConfigGroups)
+dfENV1ZookeeperConfigItems<- subset(dfENV1Zookeeper, select = config.items)
+dfENV2Zookeeper <- dfENV2_tbl_clusters_services %>% filter(stringr::str_detect(name,"zookeeper"))
+dfENV2ZookeeperRoles <- subset(dfENV2Zookeeper, select = roles) %>% unnest(roles) %>% unnest(config.items)
+dfENV2ZookeeperRoleConfigGroups <- subset(dfENV2Zookeeper, select = roleConfigGroups) %>% unnest(roleConfigGroups)
+dfENV2ZookeeperConfigItems<- subset(dfENV2Zookeeper, select = config.items) 
+knitr::kable(dfENV1ZookeeperRoles, caption = "ENV1 Zookeeper Roles")
+knitr::kable(dfENV2ZookeeperRoles, caption = "ENV2 Zookeeper Roles")
+knitr::kable(dfENV1ZookeeperRoleConfigGroups, caption = "ENV1 Zookeeper Role Config Groups")
+knitr::kable(dfENV2ZookeeperRoleConfigGroups, caption = "ENV2 Zookeeper Role Config Groups")
+knitr::kable(dfENV1ZookeeperConfigItems, caption = "ENV1 Zookeeper Config Items")
+knitr::kable(dfENV2ZookeeperConfigItems, caption = "ENV2 Zookeeper Config Items")
+```
+
+### Hosts
+```{r hosts, echo=FALSE}
+ENV1Hosts <- dfENV1_tbl$hosts
+ENV2Hosts <- dfENV2_tbl$hosts
+knitr::kable(ENV1Hosts, caption = "ENV1 Users")
+knitr::kable(ENV2Hosts, caption = "ENV2 Users")
+```
+
+### Users 
+```{r users, echo=FALSE}
+ENV1Users <- dfENV1_tbl$users
+ENV2Users <- dfENV2_tbl$users
+knitr::kable(ENV1Users, caption = "ENV1 Users")
+knitr::kable(ENV2Users, caption = "ENV2 Users")
+```
+
+### Version Info
+```{r versionInfo, echo=FALSE}
+ENV1VersionInfo <- dfENV1_tbl[,grepl("versionInfo",names(dfENV1_tbl))]
+ENV2VersionInfo <- dfENV2_tbl[,grepl("versionInfo",names(dfENV2_tbl))]
+knitr::kable(ENV1VersionInfo, caption = "ENV1 Version Info")
+knitr::kable(ENV2VersionInfo, caption = "ENV2 Version Info")
+```
+
+### AllHostsConfig 
+```{r allHostsConfig, echo=FALSE}
+ENV1AHC <- as.data.frame(dfENV1$allHostsConfig)
+ENV2AHC <- as.data.frame(dfENV2$allHostsConfig)
+knitr::kable(ENV1AHC, caption = "ENV1 AllHostsConfig")
+knitr::kable(ENV2AHC, caption = "ENV2 AllHostsConfig")
+```
+
+### Peers 
+```{r peers, echo=FALSE}
+ENV1Peers <- as.data.frame(dfENV1$peers)
+ENV2Peers <- as.data.frame(dfENV2$peers)
+knitr::kable(dfENV1$peers, caption = "ENV1 Peers")
+knitr::kable(dfENV2$peers, caption = "ENV2 Peers")
+```
+
+#### Management Services
+```{r mgmtService, echo=FALSE}
+dfENV1mgmtService <- dfENV1_tbl[,grepl("managementService",names(dfENV1_tbl))] 
+dfENV1mgmtServiceRoles <- subset(dfENV1mgmtService, select = managementService.roles) %>% unnest(managementService.roles) %>% unnest(config.items)
+dfENV1mgmtServiceRoleConfigGroups <- subset(dfENV1mgmtService, select = managementService.roleConfigGroups) %>% unnest(managementService.roleConfigGroups)
+dfENV1mgmtServiceConfigItems<- subset(dfENV1mgmtService, select = managementService.config.items)
+dfENV2mgmtService <- dfENV2_tbl[,grepl("managementService",names(dfENV2_tbl))] 
+dfENV2mgmtServiceRoles <- subset(dfENV2mgmtService, select = managementService.roles) %>% unnest(managementService.roles) %>% unnest(config.items)
+dfENV2mgmtServiceRoleConfigGroups <- subset(dfENV2mgmtService, select = managementService.roleConfigGroups) %>% unnest(managementService.roleConfigGroups)
+dfENV2mgmtServiceConfigItems <- subset(dfENV2mgmtService, select = managementService.config.items) 
+knitr::kable(dfENV1mgmtService[,c("managementService.name","managementService.type","managementService.displayName")], caption = "ENV1 Management Services")
+knitr::kable(dfENV2mgmtService[,c("managementService.name","managementService.type","managementService.displayName")], caption = "ENV2 Management Services")
+knitr::kable(dfENV1mgmtServiceRoles, caption = "ENV1 Management Services Roles")
+knitr::kable(dfENV2mgmtServiceRoles, caption = "ENV2 Management Services Roles")
+knitr::kable(dfENV1mgmtServiceRoleConfigGroups, caption = "ENV1 Management Services Config Groups")
+knitr::kable(dfENV2mgmtServiceRoleConfigGroups, caption = "ENV2 Management Services Config Groups")
+knitr::kable(dfENV1mgmtServiceConfigItems, caption = "ENV1 Management Services Config Items")
+knitr::kable(dfENV2mgmtServiceConfigItems, caption = "ENV2 Management Services Config Items")
+```
+
+### Manager Settings 
+```{r mgrSettings, echo=FALSE}
+ENV1MgrSttgs <- as.data.frame(dfENV1$managerSettings)
+ENV2MgrSttgs <- as.data.frame(dfENV2$managerSettings)
+knitr::kable(ENV1MgrSttgs, caption = "ENV1 Manager Settings")
+knitr::kable(ENV2MgrSttgs, caption = "ENV2 Manager Settings")
+```
+
+
+
+
